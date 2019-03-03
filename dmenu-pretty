@@ -1,0 +1,23 @@
+#!/usr/bin/fish
+set -l screen (xrandr | grep primary | grep -Po "\d+x\d+\+\d+\+\d+" | sed -re 's/x|\+/\n/g')
+set -l dmenu_args -x (math $screen[3] + $screen[1] / 4) -w (math $screen[1] / 2) -h 32
+set -l elements
+
+# We only accept noliners if we're using -noinput
+if not contains -- -noinput $argv; and not contains -- -l $argv
+    set argv $argv -l (math $screen[2] / 64)
+end
+
+if contains -- -l $argv
+    set elements (cat)
+    set -l line_count_index (math (contains -i -- -l $argv) + 1)
+    set -l line_count $argv[$line_count_index]
+    set line_count (if test (count $elements) -lt $line_count; echo (count $elements); else; echo $line_count; end)
+
+    # echo $line_count lines
+    set dmenu_args $dmenu_args -l $line_count -y (math $screen[4] + $screen[2] / 2 - $line_count \* 16)
+else
+    set dmenu_args $dmenu_args -noinput -y (math $screen[4] + $screen[2] / 2 - 16)
+end
+
+printf "%s\n" $elements | dmenu $argv $dmenu_args
